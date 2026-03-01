@@ -26,6 +26,7 @@ export default function LocalReminderChecker({ userId, enabled = true }) {
           .from('todos')
           .select('id, title, reminder_at, notification_sent')
           .eq('user_id', userId)
+          .eq('completed', false)
           .lte('reminder_at', now)
           .eq('notification_sent', false)
           .not('reminder_at', 'is', null);

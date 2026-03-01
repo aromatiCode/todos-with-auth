@@ -48,12 +48,13 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false }
     });
 
-    // Find todos with pending reminders that are due
+    // Find todos with pending reminders that are due (only incomplete ones)
     const now = new Date().toISOString();
     
     const { data: pendingReminders, error } = await supabaseAdmin
       .from('todos')
       .select('id, title, user_id, reminder_at')
+      .eq('completed', false)
       .lte('reminder_at', now)
       .eq('notification_sent', false)
       .not('reminder_at', 'is', null);
