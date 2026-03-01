@@ -86,7 +86,13 @@ Deno.serve(async (req) => {
       const body = await req.json();
       const { data, error } = await supabaseAdmin
         .from('todos')
-        .insert([{ user_id: userId, title: body.title, completed: body.completed || false }])
+        .insert([{ 
+          user_id: userId, 
+          title: body.title, 
+          completed: body.completed || false,
+          reminder_at: body.reminder_at || null,
+          notification_sent: false
+        }])
         .select()
         .single();
       
@@ -101,9 +107,33 @@ Deno.serve(async (req) => {
     // Handle PUT - update todo
     if (method === 'PUT' && todoId) {
       const body = await req.json();
+      
+      // Build update object - only include fields that are provided
+      const updateData: any = {};
+      
+      if (body.title !== undefined) {
+        updateData.title = body.title;
+      }
+      
+      if (body.completed !== undefined) {
+        updateData.completed = body.completed;
+      }
+      
+      // Include reminder_at if provided in the update
+      if (body.reminder_at !== undefined) {
+        updateData.reminder_at = body.reminder_at;
+        // Reset notification_sent when reminder is updated
+        updateData.notification_sent = false;
+      }
+      
+      if (Object.keys(updateData).length === 0) {
+        return new Response(JSON.stringify({ error: 'No fields to update' }), 
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      
       const { data, error } = await supabaseAdmin
         .from('todos')
-        .update({ title: body.title, completed: body.completed })
+        .update(updateData)
         .eq('id', todoId)
         .eq('user_id', userId)
         .select()

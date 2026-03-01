@@ -32,6 +32,12 @@
   color: var(--text-completed);
 }
 
+/* Disabled state when modal is open */
+.item.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
 /* Custom checkbox */
 .checkboxWrap {
   position: relative;
@@ -126,4 +132,170 @@
 .deleteBtn:hover {
   background: var(--danger-bg);
   transform: scale(1.1);
+}
+
+/* Reminder button styles */
+.reminderBtn {
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  padding: 0.25rem 0.35rem;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition), transform var(--transition);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.reminderBtn:hover {
+  background: var(--bg-badge);
+  transform: scale(1.1);
+}
+
+.reminderActive {
+  color: #ff9800;
+}
+
+/* Reminder picker popup */
+.reminderPicker {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  box-shadow: var(--shadow-card);
+  z-index: 100;
+  min-width: 220px;
+  margin-top: 4px;
+}
+
+.reminderLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.reminderInput {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.clearReminderBtn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: var(--bg-badge);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.75rem;
+  width: 100%;
+  color: var(--text-primary);
+}
+
+.clearReminderBtn:hover {
+  background: var(--bg-hover);
+}
+
+/* Modal styles */
+.modalBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  min-width: 320px;
+  max-width: 90%;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.modalClose:hover {
+  color: var(--text-primary);
+}
+
+.modalBody {
+  padding: 20px;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.modalDoneBtn {
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.modalDoneBtn:hover {
+  opacity: 0.9;
+}
+
+.currentReminder {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }

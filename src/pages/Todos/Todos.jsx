@@ -26,7 +26,9 @@ export default function Todos() {
         id: t.id,
         title: t.title,
         completed: t.completed,
-        createdAt: t.created_at
+        createdAt: t.created_at,
+        reminder_at: t.reminder_at,
+        notification_sent: t.notification_sent
       })));
     } catch (err) {
       console.error('Error fetching todos:', err);
@@ -51,7 +53,9 @@ export default function Todos() {
         id: newTodo.id,
         title: newTodo.title,
         completed: newTodo.completed,
-        createdAt: newTodo.created_at
+        createdAt: newTodo.created_at,
+        reminder_at: newTodo.reminder_at,
+        notification_sent: newTodo.notification_sent
       }, ...prev]);
       setNewTitle('');
     } catch (err) {
@@ -97,6 +101,23 @@ export default function Todos() {
     } catch (err) {
       console.error('Error deleting todo:', err);
       setError('Failed to delete todo. Please try again.');
+    }
+  }
+
+  // Handle reminder update
+  async function handleUpdateReminder(id, reminderAt) {
+    try {
+      await updateTodo(id, { reminder_at: reminderAt });
+      setTodos(prev =>
+        prev.map(t => t.id === id ? { 
+          ...t, 
+          reminder_at: reminderAt,
+          notification_sent: false // Reset notification_sent when reminder is updated
+        } : t)
+      );
+    } catch (err) {
+      console.error('Error updating reminder:', err);
+      setError('Failed to update reminder. Please try again.');
     }
   }
 
@@ -218,6 +239,7 @@ export default function Todos() {
                   onToggle={handleToggle}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  onUpdateReminder={handleUpdateReminder}
                 />
               ))}
             </ul>

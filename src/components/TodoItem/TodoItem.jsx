@@ -2,11 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import styles from './TodoItem.module.css';
 
 /**
- * @param {{ todo: object, onToggle: fn, onEdit: fn, onDelete: fn }} props
+ * @param {{ todo: object, onToggle: fn, onEdit: fn, onDelete: fn, onUpdateReminder?: fn }} props
  */
-export default function TodoItem({ todo, onToggle, onEdit, onDelete }) {
+export default function TodoItem({ todo, onToggle, onEdit, onDelete, onUpdateReminder }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(todo.title);
+  const [showReminderModal, setShowReminderModal] = useState(false);
   const inputRef = useRef(null);
   const checkId = `check-${todo.id}`;
 
@@ -33,6 +34,38 @@ export default function TodoItem({ todo, onToggle, onEdit, onDelete }) {
   function handleKeyDown(e) {
     if (e.key === 'Enter') handleEditSave();
     if (e.key === 'Escape') setIsEditing(false);
+  }
+
+  // Format reminder date for display
+  function formatReminderDate(reminderAt) {
+    if (!reminderAt) return null;
+    const date = new Date(reminderAt);
+    return date.toLocaleString();
+  }
+
+  // Handle reminder change
+  function handleReminderChange(e) {
+    const newReminder = e.target.value ? new Date(e.target.value).toISOString() : null;
+    if (onUpdateReminder) {
+      onUpdateReminder(todo.id, newReminder);
+    }
+    setShowReminderModal(false);
+  }
+
+  // Close modal when clicking outside
+  function handleModalBackdropClick(e) {
+    if (e.target === e.currentTarget) {
+      setShowReminderModal(false);
+    }
+  }
+
+  // Convert reminder_at to datetime-local format
+  function getReminderDateTimeLocal(reminderAt) {
+    if (!reminderAt) return '';
+    const date = new Date(reminderAt);
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60000);
+    return localDate.toISOString().slice(0, 16);
   }
 
   return (
@@ -72,6 +105,16 @@ export default function TodoItem({ todo, onToggle, onEdit, onDelete }) {
       )}
 
       <div className={styles.actions}>
+        {/* Reminder button */}
+        <button
+          className={`${styles.reminderBtn} ${todo.reminder_at ? styles.reminderActive : ''}`}
+          onClick={() => setShowReminderModal(true)}
+          aria-label="Set reminder"
+          title={todo.reminder_at ? `Reminder: ${formatReminderDate(todo.reminder_at)}` : 'Set reminder'}
+        >
+          {todo.notification_sent ? '🔔' : '⏰'}
+        </button>
+        
         {!isEditing && (
           <button
             className={styles.editBtn}
@@ -91,6 +134,61 @@ export default function TodoItem({ todo, onToggle, onEdit, onDelete }) {
           🗑️
         </button>
       </div>
+
+      {/* Reminder Modal */}
+      {showReminderModal && (
+        <div className={styles.modalBackdrop} onClick={handleModalBackdropClick}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <h3>Set Reminder</h3>
+              <button 
+                className={styles.modalClose}
+                onClick={() => setShowReminderModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <label className={styles.reminderLabel}>
+                <span>Select date and time:</span>
+                <input
+                  type="datetime-local"
+                  className={styles.reminderInput}
+                  value={getReminderDateTimeLocal(todo.reminder_at)}
+                  onChange={handleReminderChange}
+                  min={new Date().toISOString().slice(0, 16)}
+                />
+              </label>
+              {todo.reminder_at && (
+                <p className={styles.currentReminder}>
+                  Current reminder: {formatReminderDate(todo.reminder_at)}
+                </p>
+              )}
+            </div>
+            <div className={styles.modalFooter}>
+              {todo.reminder_at && (
+                <button
+                  className={styles.clearReminderBtn}
+                  onClick={() => {
+                    if (onUpdateReminder) {
+                      onUpdateReminder(todo.id, null);
+                    }
+                    setShowReminderModal(false);
+                  }}
+                >
+                  Clear Reminder
+                </button>
+              )}
+              <button
+                className={styles.modalDoneBtn}
+                onClick={() => setShowReminderModal(false)}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </li>
   );
 }

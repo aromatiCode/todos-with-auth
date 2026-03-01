@@ -10,11 +10,19 @@ create table if not exists public.todos (
   user_id uuid references auth.users(id) on delete cascade not null,
   title text not null,
   completed boolean default false,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  -- Calendar reminder fields
+  reminder_at timestamp with time zone,
+  notification_sent boolean default false
 );
 
 -- Create index for faster queries
 create index if not exists idx_todos_user_id on public.todos(user_id);
+
+-- Create index for efficient querying of pending reminders
+create index if not exists idx_todos_pending_reminders 
+on public.todos (reminder_at) 
+where reminder_at is not null and notification_sent = false;
 
 -- RLS Policy: Users can only see their own todos
 create policy "Users can view their own todos" on public.todos
