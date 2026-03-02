@@ -121,3 +121,15 @@ input {
   background: var(--border);
   border-radius: 3px;
 }
+
+/* ─── Modal background disable ─── */
+body.modal-open {
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Re-enable pointer events for modals */
+body.modal-open .modalBackdrop,
+body.modal-open [class*="modal"] {
+  pointer-events: auto;
+}

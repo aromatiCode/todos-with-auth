@@ -2,12 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import styles from './TodoItem.module.css';
 
 /**
- * @param {{ todo: object, onToggle: fn, onEdit: fn, onDelete: fn, onUpdateReminder?: fn }} props
+ * @param {{ todo: object, onToggle: fn, onEdit: fn, onDelete: fn, onUpdateReminder?: fn, isModalOpen?: boolean, anyModalOpen?: boolean, onModalOpen?: fn, onModalClose?: fn }} props
  */
-export default function TodoItem({ todo, onToggle, onEdit, onDelete, onUpdateReminder }) {
+export default function TodoItem({ todo, onToggle, onEdit, onDelete, onUpdateReminder, isModalOpen = false, anyModalOpen = false, onModalOpen, onModalClose }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(todo.title);
-  const [showReminderModal, setShowReminderModal] = useState(false);
   const inputRef = useRef(null);
   const checkId = `check-${todo.id}`;
 
@@ -17,6 +16,11 @@ export default function TodoItem({ todo, onToggle, onEdit, onDelete, onUpdateRem
       inputRef.current?.select();
     }
   }, [isEditing]);
+
+  // Handle modal open - notify parent
+  function handleReminderModalOpen() {
+    if (onModalOpen) onModalOpen();
+  }
 
   function handleEditStart() {
     setEditValue(todo.title);
@@ -43,33 +47,16 @@ export default function TodoItem({ todo, onToggle, onEdit, onDelete, onUpdateRem
     return date.toLocaleString();
   }
 
-  // Handle reminder change
-  function handleReminderChange(e) {
-    const newReminder = e.target.value ? new Date(e.target.value).toISOString() : null;
-    if (onUpdateReminder) {
-      onUpdateReminder(todo.id, newReminder);
-    }
-    setShowReminderModal(false);
-  }
-
-  // Close modal when clicking outside
-  function handleModalBackdropClick(e) {
-    if (e.target === e.currentTarget) {
-      setShowReminderModal(false);
-    }
-  }
-
-  // Convert reminder_at to datetime-local format
-  function getReminderDateTimeLocal(reminderAt) {
-    if (!reminderAt) return '';
-    const date = new Date(reminderAt);
-    const offset = date.getTimezoneOffset();
-    const localDate = new Date(date.getTime() - offset * 60000);
-    return localDate.toISOString().slice(0, 16);
-  }
-
   return (
-    <li className={`${styles.item} ${todo.completed ? styles.completed : ''}`}>
+    <li 
+      className={`${styles.item} ${todo.completed ? styles.completed : ''} ${!isModalOpen && anyModalOpen ? styles.itemDisabled : ''}`}
+      tabIndex={!isModalOpen && anyModalOpen ? -1 : 0}
+      onFocus={(e) => {
+        if (!isModalOpen && anyModalOpen) {
+          e.target.blur();
+        }
+      }}
+    >
       {/* Custom checkbox */}
       <div className={styles.checkboxWrap}>
         <input
@@ -107,88 +94,36 @@ export default function TodoItem({ todo, onToggle, onEdit, onDelete, onUpdateRem
       <div className={styles.actions}>
         {/* Reminder button */}
         <button
-          className={`${styles.reminderBtn} ${todo.reminder_at ? styles.reminderActive : ''}`}
-          onClick={() => setShowReminderModal(true)}
+          className={`${styles.reminderBtn} ${todo.reminder_at ? styles.reminderActive : ''} ${todo.completed ? styles.disabled : ''}`}
+          onClick={() => !todo.completed && handleReminderModalOpen()}
           aria-label="Set reminder"
           title={todo.reminder_at ? `Reminder: ${formatReminderDate(todo.reminder_at)}` : 'Set reminder'}
+          disabled={todo.completed}
         >
           {todo.notification_sent ? '🔔' : '⏰'}
         </button>
         
         {!isEditing && (
           <button
-            className={styles.editBtn}
+            className={`${styles.editBtn} ${todo.completed ? styles.disabled : ''}`}
             onClick={handleEditStart}
             aria-label="Edit todo"
             title="Edit"
+            disabled={todo.completed}
           >
             ✏️
           </button>
         )}
         <button
-          className={styles.deleteBtn}
+          className={`${styles.deleteBtn} ${todo.completed ? styles.disabled : ''}`}
           onClick={() => onDelete(todo.id)}
           aria-label="Delete todo"
           title="Delete"
+          disabled={todo.completed}
         >
           🗑️
         </button>
       </div>
-
-      {/* Reminder Modal */}
-      {showReminderModal && (
-        <div className={styles.modalBackdrop} onClick={handleModalBackdropClick}>
-          <div className={styles.modal}>
-            <div className={styles.modalHeader}>
-              <h3>Set Reminder</h3>
-              <button 
-                className={styles.modalClose}
-                onClick={() => setShowReminderModal(false)}
-              >
-                ×
-              </button>
-            </div>
-            <div className={styles.modalBody}>
-              <label className={styles.reminderLabel}>
-                <span>Select date and time:</span>
-                <input
-                  type="datetime-local"
-                  className={styles.reminderInput}
-                  value={getReminderDateTimeLocal(todo.reminder_at)}
-                  onChange={handleReminderChange}
-                  min={new Date().toISOString().slice(0, 16)}
-                />
-              </label>
-              {todo.reminder_at && (
-                <p className={styles.currentReminder}>
-                  Current reminder: {formatReminderDate(todo.reminder_at)}
-                </p>
-              )}
-            </div>
-            <div className={styles.modalFooter}>
-              {todo.reminder_at && (
-                <button
-                  className={styles.clearReminderBtn}
-                  onClick={() => {
-                    if (onUpdateReminder) {
-                      onUpdateReminder(todo.id, null);
-                    }
-                    setShowReminderModal(false);
-                  }}
-                >
-                  Clear Reminder
-                </button>
-              )}
-              <button
-                className={styles.modalDoneBtn}
-                onClick={() => setShowReminderModal(false)}
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </li>
   );
 }

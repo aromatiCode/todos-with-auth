@@ -4,6 +4,7 @@ import Navbar from '../../components/Navbar/Navbar';
 import TodoItem from '../../components/TodoItem/TodoItem';
 import { getTodos, createTodo, updateTodo, deleteTodo } from '../../lib/todosApi';
 import styles from './Todos.module.css';
+import itemStyles from '../../components/TodoItem/TodoItem.module.css';
 
 export default function Todos() {
   const { user } = useAuth();
@@ -12,6 +13,20 @@ export default function Todos() {
   const [filter, setFilter] = useState('all'); // 'all' | 'active' | 'completed'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [openModalTodoId, setOpenModalTodoId] = useState(null); // Track which todo has modal open
+  const [reminderModalData, setReminderModalData] = useState(null); // Store todo data for modal
+
+  // Toggle body class when modal is open
+  useEffect(() => {
+    if (openModalTodoId) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [openModalTodoId]);
 
   // Fetch todos from the API
   const fetchTodos = useCallback(async () => {
@@ -148,6 +163,22 @@ export default function Todos() {
     completed: { icon: '📭', text: 'No completed todos yet.' },
   };
 
+  // Format reminder date for display
+  function formatReminderDate(reminderAt) {
+    if (!reminderAt) return null;
+    const date = new Date(reminderAt);
+    return date.toLocaleString();
+  }
+
+  // Convert reminder_at to datetime-local format
+  function getReminderDateTimeLocal(reminderAt) {
+    if (!reminderAt) return '';
+    const date = new Date(reminderAt);
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60000);
+    return localDate.toISOString().slice(0, 16);
+  }
+
   return (
     <div className={styles.page}>
       <Navbar />
@@ -240,9 +271,73 @@ export default function Todos() {
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onUpdateReminder={handleUpdateReminder}
+                  isModalOpen={openModalTodoId === todo.id}
+                  anyModalOpen={openModalTodoId !== null}
+                  onModalOpen={() => {
+                    setOpenModalTodoId(todo.id);
+                    setReminderModalData(todo);
+                  }}
+                  onModalClose={() => setOpenModalTodoId(null)}
                 />
               ))}
             </ul>
+          )}
+
+          {/* Reminder Modal - rendered at parent level to prevent flickering */}
+          {openModalTodoId && reminderModalData && (
+            <div className={itemStyles.modalBackdrop} onClick={() => setOpenModalTodoId(null)}>
+              <div className={itemStyles.modal} onClick={(e) => e.stopPropagation()}>
+                <div className={itemStyles.modalHeader}>
+                  <h3>Set Reminder</h3>
+                  <button 
+                    className={itemStyles.modalClose}
+                    onClick={() => setOpenModalTodoId(null)}
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className={itemStyles.modalBody}>
+                  <label className={itemStyles.reminderLabel}>
+                    <span>Select date and time:</span>
+                    <input
+                      type="datetime-local"
+                      className={itemStyles.reminderInput}
+                      value={getReminderDateTimeLocal(reminderModalData.reminder_at)}
+                      onChange={(e) => {
+                        const newReminder = e.target.value ? new Date(e.target.value).toISOString() : null;
+                        handleUpdateReminder(reminderModalData.id, newReminder);
+                        setOpenModalTodoId(null);
+                      }}
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                  </label>
+                  {reminderModalData.reminder_at && (
+                    <p className={itemStyles.currentReminder}>
+                      Current reminder: {formatReminderDate(reminderModalData.reminder_at)}
+                    </p>
+                  )}
+                </div>
+                <div className={itemStyles.modalFooter}>
+                  {reminderModalData.reminder_at && (
+                    <button
+                      className={itemStyles.clearReminderBtn}
+                      onClick={() => {
+                        handleUpdateReminder(reminderModalData.id, null);
+                        setOpenModalTodoId(null);
+                      }}
+                    >
+                      Clear Reminder
+                    </button>
+                  )}
+                  <button
+                    className={itemStyles.modalDoneBtn}
+                    onClick={() => setOpenModalTodoId(null)}
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Footer stats */}
